@@ -47,13 +47,22 @@ curl -X POST -F "image=@photo.jpg" http://localhost:8000/analyze
 
 ```json
 {
-  "age": 28,
-  "gender": "male",
-  "skin_condition": {
-    "acne": "mild",
-    "dark_spots": "none",
-    "wrinkles": "moderate"
-  }
+  "age": 29,
+  "emotions": {
+    "angry": 0.000670479261316359,
+    "disgust": 1.1489969864442173e-8,
+    "fear": 0.006800354458391666,
+    "happy": 7.611642837524414,
+    "sad": 6.984113693237305,
+    "surprise": 0.00004583375630318187,
+    "neutral": 85.396728515625
+  },
+  "skin_redness_rgb": 149.3195823016471,
+  "brightness_l": 51.03857421875,
+  "red_green_a": 11.235978126525879,
+  "blue_yellow_b": 13.970804214477539,
+  "contrast": 61.5337511608319,
+  "hydration": 281.45854217630654
 }
 ```
 
