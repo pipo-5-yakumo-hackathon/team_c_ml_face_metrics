@@ -47,7 +47,6 @@ curl -X POST -F "image=@photo.jpg" http://localhost:8000/analyze
 
 ```json
 {
-  "age": 29,
   "emotions": {
     "angry": 0.000670479261316359,
     "disgust": 1.1489969864442173e-8,
@@ -57,12 +56,36 @@ curl -X POST -F "image=@photo.jpg" http://localhost:8000/analyze
     "surprise": 0.00004583375630318187,
     "neutral": 85.396728515625
   },
-  "skin_redness_rgb": 149.3195823016471,
-  "brightness_l": 51.03857421875,
-  "red_green_a": 11.235978126525879,
-  "blue_yellow_b": 13.970804214477539,
-  "contrast": 61.5337511608319,
-  "hydration": 281.45854217630654
+  "metrics": {
+    "age": {
+      "value": 29,
+      "status": "ok"
+    },
+    "skin_redness_rgb": {
+      "value": 149.3,
+      "status": "normal"
+    },
+    "brightness_l": {
+      "value": 51,
+      "status": "normal"
+    },
+    "red_green_a": {
+      "value": 11.2,
+      "status": "normal"
+    },
+    "blue_yellow_b": {
+      "value": 14,
+      "status": "normal"
+    },
+    "contrast": {
+      "value": 61.5,
+      "status": "normal"
+    },
+    "hydration": {
+      "value": 281.5,
+      "status": "normal"
+    }
+  }
 }
 ```
 

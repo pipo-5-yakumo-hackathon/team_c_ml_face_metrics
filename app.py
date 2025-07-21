@@ -39,6 +39,49 @@ def extract_skin_mask(image):
     mask = cv2.erode(mask, np.ones((5, 5), np.uint8), iterations=1)
     return mask
 
+def evaluate_metrics(age, r_mean, l_mean, a_mean, b_mean, contrast, hydration):
+    return {
+        "age": {
+            "value": int(age),
+            "status": "ok"
+        },
+        "skin_redness_rgb": {
+            "value": round(r_mean, 1),
+            "status": "high (possible irritation)" if r_mean > 180 else "normal" if r_mean > 100 else "low"
+        },
+        "brightness_l": {
+            "value": round(l_mean, 1),
+            "status": "light" if l_mean > 70 else "normal" if l_mean > 50 else "dark"
+        },
+        "red_green_a": {
+            "value": round(a_mean, 1),
+            "status": "redness" if a_mean > 20 else "normal" if a_mean > 5 else "pale"
+        },
+        "blue_yellow_b": {
+            "value": round(b_mean, 1),
+            "status": "yellow tint" if b_mean > 30 else "normal" if b_mean > 10 else "cool"
+        },
+        "contrast": {
+            "value": round(contrast, 1),
+            "status": "low (fatigue)" if contrast < 35 else "normal" if contrast <= 70 else "high (harsh light)"
+        },
+        "hydration": {
+            "value": round(hydration, 1),
+            "status": "dry" if hydration < 100 else "normal" if hydration <= 300 else "well-hydrated"
+        }
+    }
+
+@app.on_event("startup")
+async def startup_event():
+    global face_mesh
+    face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1)
+
+    _ = DeepFace.analyze(
+        img_path=np.zeros((100, 100, 3), dtype=np.uint8),
+        actions=['emotion', 'age'],
+        enforce_detection=False
+    )
+
 @app.post("/analyze")
 async def analyze(image: UploadFile = File(...)):
     try:
@@ -73,7 +116,7 @@ async def analyze(image: UploadFile = File(...)):
         contrast = float(gray.std())
         hydration = float(cv2.Laplacian(gray, cv2.CV_64F).var())
 
-        return {
+        metrics =  {
             "age": int(age),
             "emotions": {k: float(v) for k, v in emotions.items()},
             "skin_redness_rgb": float(r_mean),
@@ -82,6 +125,21 @@ async def analyze(image: UploadFile = File(...)):
             "blue_yellow_b": float(b_mean),
             "contrast": float(contrast),
             "hydration": float(hydration)
+        }
+
+        evaluated = evaluate_metrics(
+            metrics["age"], 
+            metrics["skin_redness_rgb"], 
+            metrics["brightness_l"], 
+            metrics["red_green_a"], 
+            metrics["blue_yellow_b"], 
+            metrics["contrast"], 
+            metrics["hydration"]
+        )
+
+        return {
+            "emotions": metrics["emotions"],
+            "metrics": evaluated
         }
 
     except Exception as e:
