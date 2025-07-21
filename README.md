@@ -1,4 +1,3 @@
-readme_en = """
 # Face Analyzer
 
 A FastAPI service for facial photo analysis. Supports age, gender, and skin condition estimation.
