@@ -128,18 +128,32 @@ async def analyze(image: UploadFile = File(...)):
         }
 
         evaluated = evaluate_metrics(
-            metrics["age"], 
+            metrics["age"],
             metrics["skin_redness_rgb"], 
             metrics["brightness_l"], 
-            metrics["red_green_a"], 
-            metrics["blue_yellow_b"], 
-            metrics["contrast"], 
+            metrics["red_green_a"],
+            metrics["blue_yellow_b"],
+            metrics["contrast"],
             metrics["hydration"]
         )
 
+        r_score = 100 - (metrics["skin_redness_rgb"]  / 255) * 100
+            
+        if hydration < 100:
+            h_score = (metrics["hydration"] / 100) * 100
+        elif hydration <= 300:
+            h_score = 100
+        else:
+            h_score = max(0, 100 - ((hydration - 300) / 100) * 100)
+            
+        overall_score = (r_score + h_score) / 2
+            
+        overall_score =  round(overall_score, 1)
+
         return {
-            "emotions": metrics["emotions"],
-            "metrics": evaluated
+            "emotions"   : metrics["emotions"],
+            "metrics"    : evaluated,
+            "skin_score" : overall_score
         }
 
     except Exception as e:

@@ -85,7 +85,8 @@ curl -X POST -F "image=@photo.jpg" http://localhost:8000/analyze
       "value": 281.5,
       "status": "normal"
     }
-  }
+  },
+  "skin_score": 70.7
 }
 ```
 
