@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 from deepface import DeepFace
 import mediapipe as mp
+import math
 
 class MaxSizeLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, max_upload_size: int = 1_000_000_000):
@@ -22,6 +23,10 @@ app.add_middleware(MaxSizeLimitMiddleware, max_upload_size=1_000_000_000)
 
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1)
+
+def hydration_score(hydration, mu=200, sigma=120):
+    score = 100 * math.exp(-0.5 * ((hydration - mu) / sigma) ** 2)
+    return max(0, min(100, score))
 
 def extract_skin_mask(image):
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -138,17 +143,14 @@ async def analyze(image: UploadFile = File(...)):
         )
 
         r_score = 100 - (metrics["skin_redness_rgb"]  / 255) * 100
-            
-        if hydration < 100:
-            h_score = (metrics["hydration"] / 100) * 100
-        elif hydration <= 300:
-            h_score = 100
-        else:
-            h_score = max(0, 100 - ((hydration - 300) / 100) * 100)
+        h_score = hydration_score(metrics["hydration"])
             
         overall_score = (r_score + h_score) / 2
             
         overall_score =  round(overall_score, 1)
+
+        evaluated["skin_redness_rgb"]["value"] = r_score
+        evaluated["hydration"]["value"]        = h_score
 
         return {
             "emotions"   : metrics["emotions"],
