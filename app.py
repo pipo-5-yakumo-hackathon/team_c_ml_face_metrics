@@ -24,8 +24,18 @@ app.add_middleware(MaxSizeLimitMiddleware, max_upload_size=1_000_000_000)
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(static_image_mode=False, max_num_faces=1)
 
-def hydration_score(hydration, mu=200, sigma=120):
-    score = 100 * math.exp(-0.5 * ((hydration - mu) / sigma) ** 2)
+def hydration_score(hydration, mu=200, sigma_left=150, sigma_right=295):
+    if hydration <= mu:
+        score = 100 * math.exp(-0.5 * ((hydration - mu) / sigma_left) ** 2)
+    else:
+        score = 100 * math.exp(-0.5 * ((hydration - mu) / sigma_right) ** 2)
+    return max(0, min(100, score))
+
+def redness_score(redness, x0=140, k=0.05):
+    x = redness
+    score = 100 - (40 / (1 + math.exp(-k * (x - x0))))
+    if x > 180:
+        score = max(0, 60 - (x - 180) * 0.8)
     return max(0, min(100, score))
 
 def extract_skin_mask(image):
@@ -72,7 +82,7 @@ def evaluate_metrics(age, r_mean, l_mean, a_mean, b_mean, contrast, hydration):
         },
         "hydration": {
             "value": round(hydration, 1),
-            "status": "dry" if hydration < 100 else "normal" if hydration <= 300 else "well-hydrated"
+            "status": "dry" if hydration < 100 else "normal" if hydration <= 300 else "well-hydrated (over-hydrated)"
         }
     }
 
@@ -142,11 +152,10 @@ async def analyze(image: UploadFile = File(...)):
             metrics["hydration"]
         )
 
-        r_score = 100 - (metrics["skin_redness_rgb"]  / 255) * 100
+        r_score = redness_score(metrics["skin_redness_rgb"])
         h_score = hydration_score(metrics["hydration"])
             
         overall_score = (r_score + h_score) / 2
-            
         overall_score =  round(overall_score, 1)
 
         evaluated["skin_redness_rgb"]["value"] = r_score
